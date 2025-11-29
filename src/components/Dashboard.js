@@ -78,7 +78,7 @@ export default function Dashboard() {
   }
 
   const profileLink = profile 
-    ? `${window.location.origin}/profile/${profile.username}`
+    ? `${window.location.origin}/${profile.username}`
     : null;
 
   if (loading) {
@@ -308,7 +308,7 @@ export default function Dashboard() {
               {profile?.username && (
                 <button 
                   className="action-btn"
-                  onClick={() => window.open(`${window.location.origin}/profile/${profile.username}`, '_blank')}
+                  onClick={() => window.open(`${window.location.origin}/${profile.username}`, '_blank')}
                 >
                   <span className="btn-icon"></span>
                   {t(language, 'dashboard.viewPublicProfile')}

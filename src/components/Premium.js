@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { createMoMoPayment, PREMIUM_PACKAGES, formatVND } from '../services/momoPayment';
+import { t } from '../translations';
 import './Premium.css';
 
 export default function Premium() {
   const { currentUser } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [profileId, setProfileId] = useState(null);
@@ -14,6 +18,9 @@ export default function Premium() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('payment'); // 'payment' or 'code'
 
   // Valid activation codes (in production, these should be stored in Firestore)
   const VALID_CODES = {
@@ -50,7 +57,7 @@ export default function Premium() {
 
   async function handleActivatePremium() {
     if (!activationCode.trim()) {
-      setMessage('Vui lòng nhập activation code');
+      setMessage(t(language, 'premium.enterCodeError'));
       setMessageType('error');
       return;
     }
@@ -63,14 +70,14 @@ export default function Premium() {
       const codeData = VALID_CODES[code];
 
       if (!codeData) {
-        setMessage('Activation code không hợp lệ!');
+        setMessage(t(language, 'premium.invalidCode'));
         setMessageType('error');
         setLoading(false);
         return;
       }
 
       if (!profileId) {
-        setMessage('Vui lòng tạo profile trước khi kích hoạt Premium!');
+        setMessage(t(language, 'premium.createProfileFirstActivate'));
         setMessageType('error');
         setLoading(false);
         return;
@@ -89,7 +96,7 @@ export default function Premium() {
         updatedAt: new Date()
       });
 
-      setMessage(`✅ Kích hoạt Premium thành công! Bạn có Premium trong ${codeData.days} ngày.`);
+      setMessage(t(language, 'premium.activateSuccess', { days: codeData.days }));
       setMessageType('success');
       setActivationCode('');
 
@@ -106,7 +113,7 @@ export default function Premium() {
       }
     } catch (error) {
       console.error('Error activating premium:', error);
-      setMessage('Lỗi khi kích hoạt Premium: ' + error.message);
+      setMessage(t(language, 'premium.activateError', { error: error.message }));
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -135,6 +142,54 @@ export default function Premium() {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
+  async function handleMoMoPayment(pkg) {
+    if (!pkg) return;
+
+    if (!profileId) {
+      setMessage(t(language, 'premium.createProfileFirst'));
+      setMessageType('error');
+      return;
+    }
+
+    setPaymentLoading(true);
+    setSelectedPackage(pkg.id);
+    setMessage('');
+    setMessageType('');
+
+    try {
+      // Generate unique order ID
+      const orderId = `PREMIUM_${pkg.id}_${Date.now()}_${currentUser.uid.slice(0, 8)}`;
+      
+      const paymentData = {
+        amount: pkg.price,
+        orderId: orderId,
+        orderInfo: `Thanh toán Premium ${pkg.name}`,
+        packageId: pkg.id,
+        userId: currentUser.uid,
+        profileId: profileId,
+        days: pkg.days
+      };
+
+      const result = await createMoMoPayment(paymentData);
+      
+      if (result && result.payUrl) {
+        // Redirect to MoMo payment page
+        window.location.href = result.payUrl;
+      } else {
+        setMessage(t(language, 'premium.paymentInitError'));
+        setMessageType('error');
+        setPaymentLoading(false);
+        setSelectedPackage(null);
+      }
+    } catch (error) {
+      console.error('Error initiating MoMo payment:', error);
+      setMessage(t(language, 'premium.paymentError', { error: error.message || t(language, 'premium.paymentInitError') }));
+      setMessageType('error');
+      setPaymentLoading(false);
+      setSelectedPackage(null);
+    }
+  }
+
   const premiumActive = isPremiumActive();
   const daysRemaining = getDaysRemaining();
 
@@ -144,10 +199,10 @@ export default function Premium() {
         <div className="premium-header">
           <h1 className="premium-title">
             <span className="premium-icon"></span>
-            Premium Membership
+            {t(language, 'premium.membership')}
           </h1>
           <p className="premium-subtitle">
-            Unlock exclusive features and enhance your profile
+            {t(language, 'premium.subtitle')}
           </p>
         </div>
 
@@ -156,36 +211,106 @@ export default function Premium() {
           <div className="premium-status active">
             <div className="status-icon"></div>
             <div className="status-content">
-              <h2>Premium Active</h2>
-              <p>Bạn đang có Premium! Còn lại <strong>{daysRemaining} ngày</strong></p>
+              <h2>{t(language, 'premium.active')}</h2>
+              <p>{t(language, 'premium.activeMessage')} <strong>{daysRemaining} {t(language, 'premium.days')}</strong></p>
               {profile.premiumExpiresAt && (
                 <p className="expires-date">
-                  Hết hạn: {new Date(profile.premiumExpiresAt.toDate ? 
+                  {t(language, 'premium.expires')} {new Date(profile.premiumExpiresAt.toDate ? 
                     profile.premiumExpiresAt.toDate() : 
-                    profile.premiumExpiresAt).toLocaleDateString('vi-VN')}
+                    profile.premiumExpiresAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
                 </p>
               )}
             </div>
           </div>
         ) : (
           <div className="premium-status inactive">
-            <div className="status-icon">❌</div>
+            <div className="status-icon"></div>
             <div className="status-content">
-              <h2>Free Account</h2>
-              <p>Bạn chưa có Premium. Kích hoạt ngay để mở khóa tất cả tính năng!</p>
+              <h2>{t(language, 'premium.freeAccount')}</h2>
+              <p>{t(language, 'premium.freeAccountMessage')}</p>
             </div>
           </div>
         )}
 
+        {/* Payment Tabs */}
+        <div className="payment-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'payment' ? 'active' : ''}`}
+            onClick={() => setActiveTab('payment')}
+          >
+            {t(language, 'premium.paymentTab')}
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'code' ? 'active' : ''}`}
+            onClick={() => setActiveTab('code')}
+          >
+            {t(language, 'premium.codeTab')}
+          </button>
+        </div>
+
+        {/* Payment Section */}
+        {activeTab === 'payment' && (
+          <div className="payment-section">
+            <h2 className="section-title">{t(language, 'premium.selectPackage')}</h2>
+            <div className="packages-grid">
+              {Object.values(PREMIUM_PACKAGES).map((pkg) => (
+                <div 
+                  key={pkg.id}
+                  className={`package-card ${pkg.popular ? 'popular' : ''} ${selectedPackage === pkg.id ? 'selected' : ''}`}
+                  onClick={() => !premiumActive && setSelectedPackage(pkg.id)}
+                >
+                  {pkg.popular && <div className="package-badge">{t(language, 'premium.mostPopular')}</div>}
+                  {pkg.badge && <div className="package-badge special">{pkg.badge}</div>}
+                  <div className="package-header">
+                    <h3 className="package-name">{pkg.name}</h3>
+                    <div className="package-price">
+                      <span className="price-main">{formatVND(pkg.price)}</span>
+                      {pkg.originalPrice && (
+                        <span className="price-original">{formatVND(pkg.originalPrice)}</span>
+                      )}
+                    </div>
+                    {pkg.discount && (
+                      <div className="package-discount">Giảm {pkg.discount}</div>
+                    )}
+                    {pkg.savings && (
+                      <div className="package-savings">{pkg.savings}</div>
+                    )}
+                  </div>
+                  <div className="package-duration">
+                    {pkg.days === 9999 ? t(language, 'premium.forever') : `${pkg.days} ${t(language, 'premium.days')}`}
+                  </div>
+                  <button
+                    className="package-select-btn"
+                    disabled={premiumActive}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoMoPayment(pkg);
+                    }}
+                  >
+                    {paymentLoading && selectedPackage === pkg.id ? t(language, 'premium.processing') : t(language, 'premium.payWithMoMo')}
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            {message && activeTab === 'payment' && (
+              <div className={`message ${messageType}`}>
+                {message}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Activation Code Section */}
+        {activeTab === 'code' && (
         <div className="activation-section">
-          <h2 className="section-title">Kích hoạt Premium</h2>
+          <h2 className="section-title">{t(language, 'premium.activateByCode')}</h2>
           <div className="activation-form">
             <input
               type="text"
               value={activationCode}
               onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
-              placeholder="Nhập activation code"
+              placeholder={t(language, 'premium.enterCode')}
               className="activation-input"
               disabled={loading || premiumActive}
             />
@@ -194,7 +319,7 @@ export default function Premium() {
               disabled={loading || premiumActive}
               className="activate-btn"
             >
-              {loading ? 'Đang xử lý...' : premiumActive ? 'Đã kích hoạt' : 'Kích hoạt Premium'}
+              {loading ? t(language, 'premium.processing') : premiumActive ? t(language, 'premium.activated') : t(language, 'premium.activatePremium')}
             </button>
           </div>
           
@@ -204,7 +329,7 @@ export default function Premium() {
             </div>
           )}
 
-          <div className="code-hint">
+          {/* <div className="code-hint">
             <p><strong>Test Codes:</strong></p>
             <ul>
               <li><code>PREMIUM2024</code> - Premium 1 tháng</li>
@@ -212,15 +337,16 @@ export default function Premium() {
               <li><code>PREMIUMFOREVER</code> - Premium vĩnh viễn</li>
               <li><code>TESTCODE</code> - Test 7 ngày</li>
             </ul>
-          </div>
+          </div> */}
         </div>
+        )}
 
         {/* Premium Features */}
        
         {/* Back Button */}
         <div className="premium-actions">
           <button onClick={() => navigate('/dashboard')} className="back-btn">
-            ← Quay lại Dashboard
+            {t(language, 'premium.backToDashboard')}
           </button>
         </div>
       </div>

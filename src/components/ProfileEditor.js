@@ -53,14 +53,20 @@ export default function ProfileEditor() {
     backgroundImage: '',
     backgroundVideo: '', // Premium: YouTube video as background
     musicUrl: '',
-    customCursor: '', // Premium: Custom cursor image
     effect: 'none',
     socialLinks: {
       facebook: '',
       instagram: '',
       twitter: '',
-      linkedin: ''
-    }
+      linkedin: '',
+      tiktok: ''
+    },
+    // Card customization fields
+    jobTitle: '',
+    status: '',
+    turma: '',
+    hashtags: [],
+    cardColor: '' // Màu thẻ, để trống sẽ dùng màu mặc định
   });
 
   useEffect(() => {
@@ -94,14 +100,19 @@ export default function ProfileEditor() {
             backgroundImage: profileData.backgroundImage || '',
             backgroundVideo: profileData.backgroundVideo || '',
             musicUrl: profileData.musicUrl || '',
-            customCursor: profileData.customCursor || '',
             effect: profileData.effect || 'none',
             socialLinks: profileData.socialLinks || {
               facebook: '',
               instagram: '',
               twitter: '',
-              linkedin: ''
-            }
+              linkedin: '',
+              tiktok: ''
+            },
+            jobTitle: profileData.jobTitle || '',
+            status: profileData.status || '',
+            turma: profileData.turma || '',
+            hashtags: Array.isArray(profileData.hashtags) ? profileData.hashtags : [],
+            cardColor: profileData.cardColor || ''
           });
           
           // Load profile opacity and blur
@@ -158,10 +169,12 @@ export default function ProfileEditor() {
 
     try {
       // Check if user selected Premium effect without Premium
-      const premiumEffects = ['aurora', 'fireworks', 'matrix', 'confetti', 'nebula'];
+      // Free effects: snow, particles, confetti, fireworks
+      // Premium effects: rain, stars, leaves, aurora, matrix, nebula
+      const premiumEffects = ['rain', 'stars', 'leaves', 'aurora', 'matrix', 'nebula'];
       if (premiumEffects.includes(formData.effect) && !isPremium) {
         const confirmUpgrade = window.confirm(
-          '💎 Tính năng Premium!\n\n' +
+          'Tính năng Premium!\n\n' +
           `Hiệu ứng "${formData.effect}" chỉ dành cho tài khoản Premium.\n\n` +
           'Bạn có muốn nâng cấp lên Premium để sử dụng hiệu ứng này không?'
         );
@@ -186,34 +199,51 @@ export default function ProfileEditor() {
         return;
       }
 
-      // Check if user selected custom cursor without Premium
-      if (formData.customCursor && !isPremium) {
-        const confirmUpgrade = window.confirm(
-          ' Tính năng Premium!\n\n' +
-          'Custom Cursor chỉ dành cho tài khoản Premium.\n\n' +
-          'Bạn có muốn nâng cấp lên Premium để sử dụng tính năng này không?'
-        );
-        if (confirmUpgrade) {
-          navigate('/premium');
-        }
-        setLoading(false);
-        return;
-      }
-
       const normalizedUsername = formData.username.toLowerCase().trim();
       
+      // Clean hashtags - remove empty strings and ensure valid array
+      const cleanHashtags = Array.isArray(formData.hashtags) 
+        ? formData.hashtags.filter(tag => tag && typeof tag === 'string' && tag.trim() !== '')
+        : [];
+      
+      // Clean socialLinks - ensure all fields are strings
+      const cleanSocialLinks = {
+        facebook: String(formData.socialLinks?.facebook || ''),
+        instagram: String(formData.socialLinks?.instagram || ''),
+        twitter: String(formData.socialLinks?.twitter || ''),
+        linkedin: String(formData.socialLinks?.linkedin || ''),
+        tiktok: String(formData.socialLinks?.tiktok || '')
+      };
+      
+      // Build profile data object - only include valid fields
       const profileData = {
-        ...formData,
         username: normalizedUsername,
         userId: currentUser.uid,
-        profileOpacity,
-        profileBlur,
-        // Premium text styling
-        textFontFamily,
-        text3DEffect,
-        textBorderWidth,
-        textBorderColor,
-        textBorderStyle,
+        displayName: String(formData.displayName || ''),
+        bio: String(formData.bio || ''),
+        email: String(formData.email || ''),
+        phone: String(formData.phone || ''),
+        location: String(formData.location || ''),
+        website: String(formData.website || ''),
+        avatar: String(formData.avatar || ''),
+        coverImage: String(formData.coverImage || ''),
+        backgroundImage: String(formData.backgroundImage || ''),
+        backgroundVideo: String(formData.backgroundVideo || ''),
+        musicUrl: String(formData.musicUrl || ''),
+        effect: String(formData.effect || 'none'),
+        socialLinks: cleanSocialLinks,
+        jobTitle: String(formData.jobTitle || ''),
+        status: String(formData.status || ''),
+        turma: String(formData.turma || ''),
+        hashtags: cleanHashtags,
+        cardColor: String(formData.cardColor || ''),
+        profileOpacity: Number(profileOpacity) || 50,
+        profileBlur: Number(profileBlur) || 50,
+        textFontFamily: String(textFontFamily || 'Arial'),
+        text3DEffect: Boolean(text3DEffect),
+        textBorderWidth: Number(textBorderWidth) || 0,
+        textBorderColor: String(textBorderColor || '#ffffff'),
+        textBorderStyle: String(textBorderStyle || 'solid'),
         updatedAt: new Date()
       };
 
@@ -288,7 +318,7 @@ export default function ProfileEditor() {
   }
 
   const profileLink = formData.username 
-    ? `${window.location.origin}/profile/${formData.username}`
+    ? `${window.location.origin}/${formData.username}`
     : null;
 
   return (
@@ -312,11 +342,14 @@ export default function ProfileEditor() {
         
         <nav className="sidebar-nav">
           <div className={`nav-item ${activeSection === 'account' ? 'active' : ''}`} onClick={() => setActiveSection('account')}>
-            <span className="nav-icon">👤</span> Account
+            <span className="nav-icon"></span> Account
             <span className="nav-arrow">▼</span>
           </div>
           <div className={`nav-item ${activeSection === 'customize' ? 'active' : ''}`} onClick={() => setActiveSection('customize')}>
             <span className="nav-icon"></span> {t(language, 'profileEditor.customize')}
+          </div>
+          <div className={`nav-item ${activeSection === 'card' ? 'active' : ''}`} onClick={() => setActiveSection('card')}>
+            <span className="nav-icon"></span> Tùy chỉnh thẻ
           </div>
        
         </nav>
@@ -414,46 +447,53 @@ export default function ProfileEditor() {
                 </div>
               </div>
 
-              {/* Background Video (Premium Only) */}
-              {isPremium && (
-                <div className="media-card premium-feature">
-                  <div className="media-card-header">
-                    <span className="media-label">Background Video (Premium)</span>
-                    <span className="premium-badge-small">Premium</span>
-                    {formData.backgroundVideo && (
-                      <button
-                        type="button"
-                        className="remove-btn"
-                        onClick={() => setFormData(prev => ({ ...prev, backgroundVideo: '' }))}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  <div className="media-preview">
-                    {formData.backgroundVideo ? (
-                      <div className="video-preview">
-                        <span className="video-icon">🎥</span>
-                        <span className="video-text">YouTube Video Background</span>
-                        <span className="file-format">VIDEO</span>
-                      </div>
-                    ) : (
-                      <div className="media-placeholder">
-                        <input
-                          type="url"
-                          name="backgroundVideo"
-                          value={formData.backgroundVideo}
-                          onChange={handleChange}
-                          placeholder="YouTube Video URL"
-                          className="audio-input"
-                        />
-                        <span className="placeholder-icon">🎥</span>
-                        <span className="placeholder-text">YouTube video as background overlay</span>
-                      </div>
-                    )}
-                  </div>
+              {/* Background Video (Premium) */}
+              <div className="media-card">
+                <div className="media-card-header">
+                  <span className="media-label">Background Video</span>
+                  {!isPremium && <span className="premium-badge">💎 Premium</span>}
+                  {formData.backgroundVideo && (
+                    <button
+                      type="button"
+                      className="remove-btn"
+                      onClick={() => setFormData(prev => ({ ...prev, backgroundVideo: '' }))}
+                      disabled={!isPremium}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
-              )}
+                <div className="media-preview">
+                  {formData.backgroundVideo ? (
+                    <div className="video-preview">
+                      <span className="video-icon">🎥</span>
+                      <span className="video-text">YouTube Video Background</span>
+                      <span className="file-format">VIDEO</span>
+                    </div>
+                  ) : (
+                    <div className="media-placeholder">
+                      <input
+                        type="url"
+                        name="backgroundVideo"
+                        value={formData.backgroundVideo}
+                        onChange={handleChange}
+                        placeholder="YouTube Video URL"
+                        className="audio-input"
+                        disabled={!isPremium}
+                      />
+                      <span className="placeholder-icon">🎥</span>
+                      <span className="placeholder-text">
+                        {isPremium ? 'YouTube video as background overlay' : 'Unlock Premium to add background video'}
+                      </span>
+                    </div>
+                  )}
+                  {!isPremium && (
+                    <div className="premium-overlay">
+                      <Link to="/premium" className="unlock-premium-btn">Unlock Premium</Link>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Profile Avatar */}
               <div className="media-card">
@@ -491,50 +531,6 @@ export default function ProfileEditor() {
                 </div>
               </div>
 
-              {/* Custom Cursor */}
-              <div className="media-card">
-                <div className="media-card-header">
-                  <span className="media-label">Custom Cursor</span>
-                  {!isPremium && <span className="premium-badge">💎 Premium</span>}
-                  {formData.customCursor && (
-                    <button
-                      type="button"
-                      className="remove-btn"
-                      onClick={() => handleRemoveImage('customCursor')}
-                      disabled={!isPremium}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-                <div className="media-preview">
-                  {formData.customCursor ? (
-                    <>
-                      <img src={formData.customCursor} alt="Custom Cursor" style={{ maxWidth: '64px', maxHeight: '64px', objectFit: 'contain' }} />
-                      <span className="file-format">.PNG/.SVG</span>
-                    </>
-                  ) : (
-                    <div className="media-placeholder">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageChange(e, 'customCursor')}
-                        disabled={uploading || !isPremium}
-                        className="media-input"
-                      />
-                      <span className="placeholder-icon">🖱️</span>
-                      <span className="placeholder-text">
-                        {isPremium ? 'Click to upload cursor image' : 'Unlock Premium to upload cursor'}
-                      </span>
-                    </div>
-                  )}
-                  {!isPremium && (
-                    <div className="premium-overlay">
-                      <Link to="/premium" className="unlock-premium-btn">Unlock Premium</Link>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Premium Banner */}
@@ -542,7 +538,7 @@ export default function ProfileEditor() {
               <div className="premium-banner" onClick={() => navigate('/premium')} style={{ cursor: 'pointer' }}>
                 <div className="premium-pattern"></div>
                 <div className="premium-content">
-                  <span className="premium-icon">💎</span>
+    
                   <span className="premium-text">Want exclusive features? Unlock more with Premium</span>
                 </div>
               </div>
@@ -568,7 +564,7 @@ export default function ProfileEditor() {
             <div className="form-group locked-feature">
               <label>
                 <span>Discord Presence</span>
-                <span className="lock-icon">🔒</span>
+                <span className="lock-icon"></span>
               </label>
               <div className="locked-content">
                 Click here to connect your Discord and unlock this feature.
@@ -576,7 +572,7 @@ export default function ProfileEditor() {
             </div>
 
             {/* Profile Opacity */}
-            <div className="form-group slider-group">
+            {/* <div className="form-group slider-group">
               <label>Profile Opacity</label>
               <div className="slider-container">
                 <input
@@ -592,11 +588,11 @@ export default function ProfileEditor() {
                   <span>50%</span>
                   <span>80%</span>
                 </div>
-              </div>
-            </div>
+              </div> */}
+            {/* </div> */}
 
             {/* Profile Blur */}
-            <div className="form-group slider-group">
+            {/* <div className="form-group slider-group">
               <label>Profile Blur</label>
               <div className="slider-container">
                 <input
@@ -613,13 +609,13 @@ export default function ProfileEditor() {
                   <span>80px</span>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Background Effects */}
             <div className="form-group">
               <label>
                 <span>Background Effects</span>
-                <span className="star-icon">⭐</span>
+               
               </label>
               <div className="effect-select-wrapper">
                 <select
@@ -645,14 +641,14 @@ export default function ProfileEditor() {
                 >
                   <option value="none">Choose an option</option>
                   <option value="snow">❄️ Snow</option>
-                  <option value="rain">🌧️ Rain</option>
-                  <option value="stars">⭐ Stars</option>
                   <option value="particles">✨ Particles</option>
-                  <option value="leaves">🍃 Leaves</option>
+                  <option value="confetti">🎊 Confetti</option>
+                  <option value="fireworks">🎆 Fireworks</option>
+                  <option value="rain">🌧️ Rain (Premium)</option>
+                  <option value="stars">⭐ Stars (Premium)</option>
+                  <option value="leaves">🍃 Leaves (Premium)</option>
                   <option value="aurora">🌌 Aurora (Premium)</option>
-                  <option value="fireworks">🎆 Fireworks (Premium)</option>
                   <option value="matrix">💚 Matrix (Premium)</option>
-                  <option value="confetti">🎊 Confetti (Premium)</option>
                   <option value="nebula">🌠 Nebula (Premium)</option>
                 </select>
                 {showPreview && previewEffect && previewEffect !== 'none' && (
@@ -678,9 +674,9 @@ export default function ProfileEditor() {
                         {previewEffect === 'matrix' && <MatrixEffect />}
                         {previewEffect === 'confetti' && <ConfettiEffect />}
                         {previewEffect === 'nebula' && <NebulaEffect />}
-                        {previewEffect && ['aurora', 'fireworks', 'matrix', 'confetti', 'nebula'].includes(previewEffect) && !isPremium && (
+                        {previewEffect && ['rain', 'stars', 'leaves', 'aurora', 'matrix', 'nebula'].includes(previewEffect) && !isPremium && (
                           <div className="preview-locked-overlay">
-                            <div className="locked-icon">🔒</div>
+                            <div className="locked-icon"></div>
                             <p>Premium Effect</p>
                             <p className="preview-note">Bạn có thể xem preview nhưng cần Premium để sử dụng</p>
                             <button 
@@ -701,7 +697,7 @@ export default function ProfileEditor() {
               </div>
               {!isPremium && (
                 <div className="premium-lock-message">
-                  🔒 Premium users get 5+ exclusive effects! <button type="button" onClick={() => navigate('/premium')} className="premium-link">Unlock Premium</button>
+                  Premium users get 6 exclusive effects: Rain, Stars, Leaves, Aurora, Matrix, Nebula! <button type="button" onClick={() => navigate('/premium')} className="premium-link">Unlock Premium</button>
                 </div>
               )}
             </div>
@@ -817,8 +813,8 @@ export default function ProfileEditor() {
             <div className="form-group">
               <label>
                 <span>Username Effects</span>
-                <span className="star-icon">⭐</span>
-                {!isPremium && <span className="premium-badge">💎 Premium</span>}
+                <span className="star-icon"></span>
+                {!isPremium && <span className="premium-badge">Premium</span>}
               </label>
               <select className="custom-select" disabled={!isPremium}>
                 <option>Choose an option</option>
@@ -827,7 +823,7 @@ export default function ProfileEditor() {
               </select>
               {!isPremium && (
                 <div className="premium-lock-message">
-                  🔒 Unlock Premium for exclusive username effects! <Link to="/premium" className="premium-link">Unlock Premium</Link>
+                   Unlock Premium for exclusive username effects! <Link to="/premium" className="premium-link">Unlock Premium</Link>
                 </div>
               )}
             </div>
@@ -836,7 +832,7 @@ export default function ProfileEditor() {
             <div className="form-group">
               <label>
                 <span>Location</span>
-                <span className="location-icon">📍</span>
+                <span className="location-icon"></span>
               </label>
               <input
                 type="text"
@@ -922,7 +918,115 @@ export default function ProfileEditor() {
                 />
               </div>
             </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>TikTok</label>
+                <input
+                  type="url"
+                  name="social.tiktok"
+                  value={formData.socialLinks.tiktok}
+                  onChange={handleChange}
+                  placeholder="https://tiktok.com/@..."
+                />
+              </div>
+            </div>
           </div>
+
+          {/* Card Customization Section */}
+          {activeSection === 'card' && (
+            <div className="card-customization-section">
+              <h2 className="section-title">Tùy chỉnh thẻ Profile</h2>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Chức danh / Job Title</label>
+                  <input
+                    type="text"
+                    name="jobTitle"
+                    value={formData.jobTitle}
+                    onChange={handleChange}
+                    placeholder="Ví dụ: Product Designer, Developer..."
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Trạng thái / Status</label>
+                  <input
+                    type="text"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    placeholder="Ví dụ: Cursando, Available, Busy..."
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Turma / Lớp</label>
+                  <input
+                    type="text"
+                    name="turma"
+                    value={formData.turma}
+                    onChange={handleChange}
+                    placeholder="Ví dụ: #0001, Class A..."
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Hashtags (mỗi hashtag trên một dòng)</label>
+                  <textarea
+                    name="hashtags"
+                    value={formData.hashtags.join('\n')}
+                    onChange={(e) => {
+                      const tags = e.target.value.split('\n').filter(tag => tag.trim() !== '');
+                      setFormData(prev => ({ ...prev, hashtags: tags }));
+                    }}
+                    placeholder="Ví dụ:&#10;#cursodefigma&#10;#feuxdesign&#10;#design"
+                    rows={5}
+                  />
+                  <small className="form-hint">Nhập mỗi hashtag trên một dòng. Ví dụ: #cursodefigma</small>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Màu thẻ (để trống sẽ dùng màu mặc định)</label>
+                  <div className="color-picker-container">
+                    <input
+                      type="color"
+                      name="cardColor"
+                      value={formData.cardColor || '#DC2626'}
+                      onChange={handleChange}
+                      className="color-picker-input"
+                    />
+                    <input
+                      type="text"
+                      name="cardColor"
+                      value={formData.cardColor}
+                      onChange={handleChange}
+                      placeholder="#DC2626 hoặc để trống"
+                      className="color-text-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, cardColor: '' }))}
+                      className="color-reset-btn"
+                      title="Đặt lại màu mặc định"
+                    >
+                      ↻
+                    </button>
+                  </div>
+                  <small className="form-hint">Chọn màu chủ đạo cho thẻ. Để trống để dùng màu đỏ-tím mặc định.</small>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Form Actions */}
           <div className="form-actions">

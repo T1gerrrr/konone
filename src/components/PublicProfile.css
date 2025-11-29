@@ -30,25 +30,25 @@
   gap: 10px;
   text-decoration: none;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.075);
+  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(10px);
   padding: 12px 20px;
   border-radius: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .profile-logo:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(255, 255, 255, 0.288);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .profile-logo .logo-icon {
-  font-size: 24px;
-  color: white;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
@@ -115,64 +115,402 @@
   justify-content: center;
   width: 100%;
   max-width: 600px;
-  padding: 40px 20px;
+  padding: 80px 20px 40px;
 }
 
-/* 3D Card with Blur Effect */
+/* Card Hanger (String and Hook) */
+.card-hanger {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hanger-hook {
+  width: 35px;
+  height: 25px;
+  border: 3px solid rgba(220, 38, 38, 0.9);
+  border-bottom: none;
+  border-top-left-radius: 50%;
+  border-top-right-radius: 50%;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.4) 0%, rgba(199, 21, 133, 0.4) 100%);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 5px rgba(220, 38, 38, 0.4),
+    0 0 20px rgba(220, 38, 38, 0.3);
+  position: relative;
+  transform-origin: bottom center;
+  animation: hookSwing 4s ease-in-out infinite;
+  z-index: 11;
+}
+
+.hanger-hook::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 20px;
+  border: 2px solid rgba(220, 38, 38, 0.6);
+  border-bottom: none;
+  border-top-left-radius: 50%;
+  border-top-right-radius: 50%;
+  background: rgba(26, 26, 26, 0.9);
+}
+
+.hanger-string {
+  width: 4px;
+  height: 65px;
+  background: linear-gradient(180deg, 
+    rgba(220, 38, 38, 0.9) 0%, 
+    rgba(199, 21, 133, 0.9) 30%,
+    rgba(220, 38, 38, 0.9) 60%,
+    rgba(199, 21, 133, 0.9) 100%);
+  box-shadow: 
+    0 0 15px rgba(220, 38, 38, 0.6),
+    inset 0 0 10px rgba(199, 21, 133, 0.4),
+    2px 0 5px rgba(0, 0, 0, 0.3),
+    -2px 0 5px rgba(0, 0, 0, 0.3);
+  transform-origin: top center;
+  animation: stringSwing 4s ease-in-out infinite;
+  position: relative;
+  margin-top: -3px;
+}
+
+.hanger-string::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle, rgba(220, 38, 38, 1) 0%, rgba(199, 21, 133, 0.9) 50%, rgba(220, 38, 38, 0.8) 100%);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 20px rgba(220, 38, 38, 0.8),
+    0 0 30px rgba(199, 21, 133, 0.5),
+    inset 0 0 10px rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes hookSwing {
+  0%, 100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+
+@keyframes stringSwing {
+  0%, 100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+/* 3D Card with Blur Effect - Hero Profile Style */
 .profile-card-3d {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: 30px;
-  padding: 50px 40px;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  text-align: center;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transform-style: preserve-3d;
-  transition: transform 0.3s ease;
-  animation: fadeInUp 0.8s ease-out;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  animation: fadeInUp 0.8s ease-out, cardSwing 4s ease-in-out infinite;
   width: 100%;
-  max-width: 500px;
+  max-width: 400px;
   position: relative;
+  transform-origin: top center;
 }
 
 .profile-card-3d:hover {
-  transform: translateY(-10px) rotateX(5deg);
+
+  box-shadow: 0 35px 100px rgba(255, 255, 255, 0.308);
 }
 
-.profile-avatar-container {
-  margin-bottom: 25px;
+@keyframes cardSwing {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  25% {
+    transform: rotate(2deg);
+  }
+  50% {
+    transform: rotate(-1.5deg);
+  }
+  75% {
+    transform: rotate(1.5deg);
+  }
+}
+
+@keyframes cardHover {
+  0% {
+    transform: translateY(-10px) rotateX(-5deg) rotateY(5deg) scale(1.02);
+  }
+  50% {
+    transform: translateY(-15px) rotateX(-7deg) rotateY(7deg) scale(1.03);
+  }
+  100% {
+    transform: translateY(-10px) rotateX(-5deg) rotateY(5deg) scale(1.02);
+  }
+}
+
+/* Profile Cover Image */
+.profile-card-cover {
+  width: 100%;
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  z-index: 1;
+}
+
+/* Custom Card Layout - Banner with Overlay */
+.profile-card-3d.custom-card-layout .profile-card-cover {
+  height: 320px;
+  display: flex;
+  align-items: flex-end;
+  padding: 20px;
+  border-radius: 24px 24px 0 0;
+  position: relative;
+}
+
+.profile-card-3d.custom-card-layout .profile-card-cover::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 50%, transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.profile-card-3d.custom-card-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-overlay-content {
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding-bottom: 20px;
+}
+
+/* Overlay Avatar */
+.profile-avatar-container-overlay {
+  margin-bottom: 15px;
   display: flex;
   justify-content: center;
 }
 
-.profile-avatar {
-  width: 120px;
-  height: 120px;
+.profile-avatar-overlay {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  border: 4px solid rgba(255, 255, 255, 0.9);
   object-fit: cover;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.profile-avatar-placeholder-overlay {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #DC2626 0%, #C71585 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 45px;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Overlay Text */
+.profile-name-overlay {
+  color: white;
+  font-size: 28px;
+  margin: 10px 0;
+  font-weight: 700;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
+}
+
+.profile-job-title-overlay {
+  color: #C71585;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 8px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.profile-status-overlay {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 15px;
+  margin: 6px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.profile-status-overlay .status-value-overlay {
+  color: #C71585;
+  font-weight: 600;
+}
+
+.profile-turma-overlay {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 15px;
+  margin: 6px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Profile Info Section */
+.profile-card-info {
+  padding: 50px 25px 25px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  /* border: 1px solid rgba(255, 255, 255, 0.1); */
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  border-radius: 0 0 24px 24px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-right: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Info Layout - Only Hashtags */
+.profile-card-info.custom-info-layout {
+  padding: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80px;
+}
+
+.profile-avatar-container {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  margin-top: -45px;
+  position: relative;
+  z-index: 2;
+}
+
+.profile-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 4px solid rgba(26, 26, 26, 0.9);
+  object-fit: cover;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.profile-avatar-placeholder {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #DC2626 0%, #C71585 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  border: 4px solid rgba(26, 26, 26, 0.9);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .profile-name {
   color: white;
-  font-size: 42px;
-  margin: 0 0 20px 0;
+  font-size: 24px;
+  margin: 0 0 8px 0;
   font-weight: 700;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
-  letter-spacing: 1px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.profile-username {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 15px;
 }
 
 .profile-bio {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 18px;
-  line-height: 1.8;
-  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 15px 0;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Card Customization Fields */
+.profile-job-title {
+  color: #C71585;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 8px 0;
+  text-shadow: 0 2px 8px rgba(199, 21, 133, 0.5);
+}
+
+.profile-status {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.profile-status .status-value {
+  color: #C71585;
+  font-weight: 600;
+  text-shadow: 0 2px 8px rgba(199, 21, 133, 0.5);
+}
+
+.profile-turma {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.profile-hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hashtag-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(199, 21, 133, 0.2);
+  border: 1px solid rgba(199, 21, 133, 0.4);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.hashtag-tag:hover {
+  background: rgba(199, 21, 133, 0.3);
+  border-color: rgba(199, 21, 133, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(199, 21, 133, 0.3);
 }
 
 @keyframes fadeInUp {
@@ -246,6 +584,13 @@
   background: rgba(0, 119, 181, 0.3);
   border-color: rgba(0, 119, 181, 0.5);
   color: #0077b5;
+}
+
+.social-icon.tiktok:hover {
+  background: rgba(0, 242, 234, 0.3);
+  border-color: rgba(255, 0, 80, 0.5);
+  color: #00f2ea;
+  box-shadow: 0 0 20px rgba(255, 0, 80, 0.4);
 }
 
 .profile-loading,
@@ -423,8 +768,34 @@
   }
 
   .profile-card-3d {
-    padding: 40px 30px;
     max-width: 90%;
+  }
+
+  .profile-card-cover {
+    height: 180px;
+  }
+
+  .profile-card-info {
+    padding: 45px 20px 20px;
+  }
+
+  .profile-avatar,
+  .profile-avatar-placeholder {
+    width: 75px;
+    height: 75px;
+    font-size: 32px;
+  }
+
+  .profile-name {
+    font-size: 20px;
+  }
+
+  .profile-username {
+    font-size: 12px;
+  }
+
+  .profile-bio {
+    font-size: 14px;
   }
 
   .profile-avatar {
@@ -466,3 +837,11 @@
   }
 }
 
+.unlock-premium-btn{
+  background: linear-gradient(135deg, #DC2626 0%, #C71585 100%);
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  
+}

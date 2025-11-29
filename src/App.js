@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import ProfileEditor from './components/ProfileEditor';
 import PublicProfile from './components/PublicProfile';
 import Premium from './components/Premium';
+import Community from './components/Community';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/community" element={<Community />} />
               <Route 
                 path="/dashboard" 
                 element={
@@ -46,7 +48,7 @@ function App() {
                   </PrivateRoute>
                 } 
               />
-              <Route path="/profile/:username" element={<PublicProfile />} />
+              <Route path="/:username" element={<PublicProfile />} />
             </Routes>
           </div>
         </LanguageProvider>

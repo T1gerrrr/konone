@@ -41,7 +41,7 @@ export default function Register() {
         console.log('Verification email sent successfully');
         console.log('Email result:', emailResult);
         setEmailSent(true);
-        setSuccess('Đăng ký thành công! Email xác thực đã được gửi đến ' + email + '. Vui lòng kiểm tra hộp thư (kể cả thư mục Spam/Junk). Email có thể mất 1-5 phút để đến.');
+        setSuccess('Đăng ký thành công! Email xác thực đã được gửi đến ' + email + '. Vui lòng kiểm tra hộp thư (kể cả thư mục Spam/Junk(Thư rác)). Email có thể mất 1-5 phút để đến.');
       } catch (emailError) {
         console.error('❌ Error sending verification email:', emailError);
         console.error('Error code:', emailError.code);
@@ -99,6 +99,7 @@ export default function Register() {
 
   return (
     <div className="auth-container">
+      <img src="https://raw.githubusercontent.com/T1gerrrr/konone/refs/heads/main/logo.png" alt="KonOne Logo" className="auth-logo" />
       <div className="auth-card">
         <h2>REGISTER</h2>
         {error && <div className="error-message">{error}</div>}
@@ -129,7 +130,7 @@ export default function Register() {
             />
           </div>
           <div className="form-group">
-            <label>Mật khẩu</label>
+            <label>Password</label>
             <input
               type="password"
               value={password}
@@ -140,7 +141,7 @@ export default function Register() {
             />
           </div>
           <div className="form-group">
-            <label>Xác nhận mật khẩu</label>
+            <label>Confirm Password</label>
             <input
               type="password"
               value={confirmPassword}

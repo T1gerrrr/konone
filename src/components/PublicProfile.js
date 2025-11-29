@@ -163,44 +163,6 @@ export default function PublicProfile() {
     setVolume(newVolume);
   }
 
-  // Apply custom cursor if available and user is Premium
-  // This must be before early returns to follow React Hooks rules
-  useEffect(() => {
-    if (!profile) return;
-    
-    // Check if user has premium
-    const isPremium = profile.isPremium && profile.premiumExpiresAt?.toDate ? 
-      profile.premiumExpiresAt.toDate() > new Date() : 
-      (profile.isPremium && profile.premiumExpiresAt ? new Date(profile.premiumExpiresAt) > new Date() : false);
-    
-    if (profile.customCursor && isPremium) {
-      // Apply cursor to the entire document body when on this page
-      document.body.style.cursor = `url(${profile.customCursor}), auto`;
-      // Also apply to all elements in public-profile
-      const style = document.createElement('style');
-      style.id = 'custom-cursor-style';
-      style.textContent = `
-        .public-profile * {
-          cursor: url(${profile.customCursor}), auto !important;
-        }
-        .public-profile button,
-        .public-profile a,
-        .public-profile input[type="range"] {
-          cursor: url(${profile.customCursor}), pointer !important;
-        }
-      `;
-      document.head.appendChild(style);
-      
-      return () => {
-        document.body.style.cursor = '';
-        const existingStyle = document.getElementById('custom-cursor-style');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-      };
-    }
-  }, [profile?.customCursor, profile?.isPremium, profile?.premiumExpiresAt]);
-
   if (loading) {
     return (
       <div className="profile-loading">
@@ -220,6 +182,9 @@ export default function PublicProfile() {
   }
 
   const socialLinks = profile.socialLinks || {};
+  
+  // Card color - default to magenta if not set
+  const cardColor = profile.cardColor || '#C71585';
 
   // Check if user has premium
   const isPremium = profile.isPremium && profile.premiumExpiresAt?.toDate ? 
@@ -230,26 +195,28 @@ export default function PublicProfile() {
   const backgroundVideoId = profile.backgroundVideo ? getYouTubeVideoId(profile.backgroundVideo) : null;
 
   // Render effect based on profile.effect
+  // Free effects: snow, particles, confetti, fireworks
+  // Premium effects: rain, stars, leaves, aurora, matrix, nebula
   const renderEffect = () => {
     switch (profile.effect) {
       case 'snow':
         return <SnowEffect />;
-      case 'rain':
-        return <RainEffect />;
-      case 'stars':
-        return <StarsEffect />;
       case 'particles':
         return <ParticlesEffect />;
+      case 'confetti':
+        return <ConfettiEffect />;
+      case 'fireworks':
+        return <FireworksEffect />;
+      case 'rain':
+        return isPremium ? <RainEffect /> : null;
+      case 'stars':
+        return isPremium ? <StarsEffect /> : null;
       case 'leaves':
-        return <LeavesEffect />;
+        return isPremium ? <LeavesEffect /> : null;
       case 'aurora':
         return isPremium ? <AuroraEffect /> : null;
-      case 'fireworks':
-        return isPremium ? <FireworksEffect /> : null;
       case 'matrix':
         return isPremium ? <MatrixEffect /> : null;
-      case 'confetti':
-        return isPremium ? <ConfettiEffect /> : null;
       case 'nebula':
         return isPremium ? <NebulaEffect /> : null;
       default:
@@ -270,7 +237,11 @@ export default function PublicProfile() {
     >
       {/* Website Logo */}
       <Link to="/" className="profile-logo">
-        <div className="logo-icon">✈</div>
+        <img 
+          src="https://raw.githubusercontent.com/T1gerrrr/konone/refs/heads/main/logo.png" 
+          alt="KonOne Logo" 
+          className="logo-icon"
+        />
         <span className="logo-text">KonOne</span>
       </Link>
 
@@ -346,50 +317,147 @@ export default function PublicProfile() {
 
       {/* Profile Content - Centered Card with 3D Effect */}
       <div className="profile-container">
-        <div className="profile-card-3d">
-          {/* Avatar inside card */}
-          {profile.avatar && (
-            <div className="profile-avatar-container">
-              <img src={profile.avatar} alt={profile.displayName} className="profile-avatar" />
-            </div>
-          )}
-          
-          <h1 
-            className="profile-name"
+        {/* Hanging String and Hook */}
+        <div className="card-hanger">
+          <div className="hanger-hook"></div>
+          <div className="hanger-string"></div>
+        </div>
+        <div className={`profile-card-3d ${(profile.jobTitle || profile.status || profile.turma || (profile.hashtags && profile.hashtags.length > 0)) ? 'custom-card-layout' : ''}`}>
+          {/* Profile Cover Image (Banner) */}
+          <div 
+            className="profile-card-cover"
             style={{
-              fontFamily: profile.textFontFamily || 'Arial',
-              textShadow: profile.text3DEffect 
-                ? `3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1)`
-                : 'none',
-              WebkitTextShadow: profile.text3DEffect 
-                ? `3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1)`
-                : 'none',
-              borderWidth: profile.textBorderWidth ? `${profile.textBorderWidth}px` : '0',
-              borderStyle: profile.textBorderStyle || 'solid',
-              borderColor: profile.textBorderColor || 'transparent',
-              transform: profile.text3DEffect ? 'perspective(500px) rotateX(5deg)' : 'none',
-              transformStyle: profile.text3DEffect ? 'preserve-3d' : 'flat'
+              backgroundImage: profile.coverImage 
+                ? `url(${profile.coverImage})` 
+                : (profile.backgroundImage 
+                  ? `url(${profile.backgroundImage})` 
+                  : `linear-gradient(135deg, #DC2626 0%, #C71585 100%)`)
             }}
           >
-            {profile.displayName || 'Chưa có tên'}
-          </h1>
-          {profile.bio && (
-            <p 
-              className="profile-bio"
-              style={{
-                fontFamily: profile.textFontFamily || 'Arial',
-                borderWidth: profile.textBorderWidth ? `${profile.textBorderWidth}px` : '0',
-                borderStyle: profile.textBorderStyle || 'solid',
-                borderColor: profile.textBorderColor || 'transparent'
-              }}
-            >
-              {profile.bio}
-            </p>
+            {/* Text Overlay on Banner for Custom Card */}
+            {(profile.jobTitle || profile.status || profile.turma || (profile.hashtags && profile.hashtags.length > 0)) && (
+              <div className="card-overlay-content">
+                {/* Avatar on Banner */}
+                {profile.avatar ? (
+                  <div className="profile-avatar-container-overlay">
+                    <img src={profile.avatar} alt={profile.displayName} className="profile-avatar-overlay" />
+                  </div>
+                ) : (
+                  <div className="profile-avatar-container-overlay">
+                    <div className="profile-avatar-placeholder-overlay">👤</div>
+                  </div>
+                )}
+
+                {/* Name and Info Overlay */}
+                <h1 
+                  className="profile-name-overlay"
+                  style={{
+                    fontFamily: profile.textFontFamily || 'Arial',
+                    textShadow: profile.text3DEffect 
+                      ? `3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1)`
+                      : '0 2px 10px rgba(0, 0, 0, 0.8)',
+                  }}
+                >
+                  {profile.displayName || 'Chưa có tên'}
+                </h1>
+                
+                {profile.jobTitle && (
+                  <div className="profile-job-title-overlay" style={{ color: cardColor }}>
+                    {profile.jobTitle}
+                  </div>
+                )}
+
+                {profile.status && (
+                  <div className="profile-status-overlay">
+                  <span className="status-value-overlay" style={{ color: cardColor }}>{profile.status}</span>
+                  </div>
+                )}
+
+                {profile.turma && (
+                  <div className="profile-turma-overlay">{profile.turma}</div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Profile Info Section */}
+          {!(profile.jobTitle || profile.status || profile.turma || (profile.hashtags && profile.hashtags.length > 0)) ? (
+            <div className="profile-card-info">
+              {/* Avatar overlapping cover */}
+              {profile.avatar ? (
+                <div className="profile-avatar-container">
+                  <img src={profile.avatar} alt={profile.displayName} className="profile-avatar" />
+                </div>
+              ) : (
+                <div className="profile-avatar-container">
+                  <div className="profile-avatar-placeholder">👤</div>
+                </div>
+              )}
+              
+              <h1 
+                className="profile-name"
+                style={{
+                  fontFamily: profile.textFontFamily || 'Arial',
+                  textShadow: profile.text3DEffect 
+                    ? `3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1)`
+                    : 'none',
+                  WebkitTextShadow: profile.text3DEffect 
+                    ? `3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1)`
+                    : 'none',
+                  borderWidth: profile.textBorderWidth ? `${profile.textBorderWidth}px` : '0',
+                  borderStyle: profile.textBorderStyle || 'solid',
+                  borderColor: profile.textBorderColor || 'transparent',
+                  transform: profile.text3DEffect ? 'perspective(500px) rotateX(5deg)' : 'none',
+                  transformStyle: profile.text3DEffect ? 'preserve-3d' : 'flat'
+                }}
+              >
+                {profile.displayName || 'Chưa có tên'}
+              </h1>
+              
+              {profile.username && (
+                <div className="profile-username">@{profile.username}</div>
+              )}
+              
+              {profile.bio && (
+                <p 
+                  className="profile-bio"
+                  style={{
+                    fontFamily: profile.textFontFamily || 'Arial',
+                    borderWidth: profile.textBorderWidth ? `${profile.textBorderWidth}px` : '0',
+                    borderStyle: profile.textBorderStyle || 'solid',
+                    borderColor: profile.textBorderColor || 'transparent'
+                  }}
+                >
+                  {profile.bio}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="profile-card-info custom-info-layout">
+              {/* Only show hashtags at bottom for custom layout */}
+              {profile.hashtags && profile.hashtags.length > 0 && (
+                <div className="profile-hashtags">
+                  {profile.hashtags.map((tag, index) => (
+                    <span 
+                      key={index} 
+                      className="hashtag-tag"
+                      style={{
+                        background: `${cardColor}33`,
+                        borderColor: `${cardColor}66`,
+                        color: 'rgba(255, 255, 255, 0.9)'
+                      }}
+                    >
+                      {tag.startsWith('#') ? tag : `#${tag}`}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {/* Social Links Icons */}
-        {(socialLinks.facebook || socialLinks.instagram || socialLinks.twitter || socialLinks.linkedin) && (
+        {(socialLinks.facebook || socialLinks.instagram || socialLinks.twitter || socialLinks.linkedin || socialLinks.tiktok) && (
           <div className="social-icons-container">
             {socialLinks.facebook && (
               <a 
@@ -440,6 +508,19 @@ export default function PublicProfile() {
               >
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </a>
+            )}
+            {socialLinks.tiktok && (
+              <a 
+                href={socialLinks.tiktok} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="social-icon tiktok"
+                title="TikTok"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                 </svg>
               </a>
             )}
