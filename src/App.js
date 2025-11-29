@@ -1,24 +1,57 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+import PrivateRoute from './components/PrivateRoute';
+import Home from './components/Home';
+import Login from './components/Login';
+import Register from './components/Register';
+import Dashboard from './components/Dashboard';
+import ProfileEditor from './components/ProfileEditor';
+import PublicProfile from './components/PublicProfile';
+import Premium from './components/Premium';
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <AuthProvider>
+        <LanguageProvider>
+          <div className="App">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/edit-profile" 
+                element={
+                  <PrivateRoute>
+                    <ProfileEditor />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/premium" 
+                element={
+                  <PrivateRoute>
+                    <Premium />
+                  </PrivateRoute>
+                } 
+              />
+              <Route path="/profile/:username" element={<PublicProfile />} />
+            </Routes>
+          </div>
+        </LanguageProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
